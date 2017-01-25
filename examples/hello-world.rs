@@ -29,9 +29,11 @@ impl Service for HelloWorld {
     type Future = future::Ok<Response, io::Error>;
 
     fn call(&self, _request: Request) -> Self::Future {
-        let mut resp = Response::new();
-        resp.body("Hello, world!");
-        future::ok(resp)
+        for (k, v) in _request.headers() {
+            println!("{} {:?}", k, v);
+        }
+
+        future::ok("Hello, world!".into())
     }
 }
 

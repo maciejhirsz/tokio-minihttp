@@ -5,15 +5,19 @@ extern crate time;
 extern crate tokio_core;
 extern crate tokio_proto;
 extern crate tokio_service;
+extern crate smallvec;
+extern crate inlinable_string;
 
 mod date;
 mod request;
 mod response;
+mod headers;
 
 use std::io;
 
 pub use request::Request;
 pub use response::Response;
+pub use headers::Headers;
 
 use tokio_proto::pipeline::ServerProto;
 use tokio_core::io::{Io, Codec, Framed, EasyBuf};

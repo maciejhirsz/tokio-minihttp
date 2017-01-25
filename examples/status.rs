@@ -19,8 +19,8 @@ impl Service for StatusService {
     type Error = io::Error;
     type Future = future::Ok<Response, io::Error>;
 
-    fn call(&self, _request: Request) -> Self::Future {
-        let (code, message) = match _request.path() {
+    fn call(&self, request: Request) -> Self::Future {
+        let (code, message) = match request.path() {
             "/200" => (200, "OK"),
             "/400" => (400, "Bad Request"),
             "/500" => (500, "Internal Server Error"),

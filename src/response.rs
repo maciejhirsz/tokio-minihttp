@@ -1,8 +1,10 @@
 use std::fmt::{self, Write};
 
+use headers::Headers;
+
 pub struct Response {
-    headers: Vec<(String, String)>,
-    response: String,
+    headers: Headers,
+    response: Vec<u8>,
     status_message: StatusMessage,
 }
 
@@ -14,8 +16,8 @@ enum StatusMessage {
 impl Response {
     pub fn new() -> Response {
         Response {
-            headers: Vec::new(),
-            response: String::new(),
+            headers: Headers::new(),
+            response: Vec::new(),
             status_message: StatusMessage::Ok,
         }
     }
@@ -25,14 +27,39 @@ impl Response {
         self
     }
 
+    pub fn headers_mut(&mut self) -> &mut Headers {
+        &mut self.headers
+    }
+
     pub fn header(&mut self, name: &str, val: &str) -> &mut Response {
-        self.headers.push((name.to_string(), val.to_string()));
+        self.headers.add(name, val);
         self
     }
 
     pub fn body(&mut self, s: &str) -> &mut Response {
-        self.response = s.to_string();
+        self.response = s.to_string().into_bytes();
         self
+    }
+}
+
+impl From<String> for Response {
+    fn from(res: String) -> Response {
+        let mut headers = Headers::new();
+
+        headers.add("Content-Type", "text/plain; charset=utf-8");
+
+        Response {
+            headers: headers,
+            response: res.into_bytes(),
+            status_message: StatusMessage::Ok,
+        }
+    }
+}
+
+impl<'a> From<&'a str> for Response {
+    #[inline]
+    fn from(res: &str) -> Response {
+        res.to_string().into()
     }
 }
 
@@ -42,12 +69,11 @@ pub fn encode(msg: Response, buf: &mut Vec<u8>) {
 
     write!(FastWrite(buf), "\
         HTTP/1.1 {}\r\n\
-        Server: Example\r\n\
         Content-Length: {}\r\n\
         Date: {}\r\n\
     ", msg.status_message, length, now).unwrap();
 
-    for &(ref k, ref v) in &msg.headers {
+    for (k, v) in msg.headers.iter() {
         buf.extend_from_slice(k.as_bytes());
         buf.extend_from_slice(b": ");
         buf.extend_from_slice(v.as_bytes());
@@ -55,7 +81,7 @@ pub fn encode(msg: Response, buf: &mut Vec<u8>) {
     }
 
     buf.extend_from_slice(b"\r\n");
-    buf.extend_from_slice(msg.response.as_bytes());
+    buf.extend_from_slice(&msg.response);
 }
 
 // TODO: impl fmt::Write for Vec<u8>

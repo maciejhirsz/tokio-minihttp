@@ -8,7 +8,6 @@ pub struct Request {
     method: Slice,
     path: Slice,
     version: u8,
-    // TODO: use a small vec to avoid this unconditional allocation
     headers: Vec<(Slice, Slice)>,
     data: EasyBuf,
 }
@@ -93,13 +92,16 @@ pub fn decode(buf: &mut EasyBuf) -> io::Result<Option<Request>> {
 }
 
 impl<'req> Iterator for RequestHeaders<'req> {
-    type Item = (&'req str, &'req [u8]);
+    type Item = (&'req str, &'req str);
 
-    fn next(&mut self) -> Option<(&'req str, &'req [u8])> {
+    fn next(&mut self) -> Option<Self::Item> {
         self.headers.next().map(|&(ref a, ref b)| {
             let a = self.req.slice(a);
             let b = self.req.slice(b);
-            (str::from_utf8(a).unwrap(), b)
+            (
+                str::from_utf8(a).expect("Headers can be ASCII only"),
+                str::from_utf8(b).expect("Headers can be ASCII only"),
+            )
         })
     }
 }
